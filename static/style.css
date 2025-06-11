@@ -1,0 +1,9 @@
+body {
+  background-color: #f9f9f9;
+}
+h1, h4 {
+  font-weight: bold;
+}
+.card-header {
+  background-color: #e9ecef;
+}

@@ -1,0 +1,27 @@
+[
+  {
+    "date": "2025-06-11",
+    "workout_name": "legs",
+    "exercises": []
+  },
+  {
+    "date": "2025-06-11",
+    "workout_name": "Legs",
+    "exercises": [
+      {
+        "name": "squats",
+        "sets": 4,
+        "reps": "8",
+        "weight": "145",
+        "notes": ""
+      },
+      {
+        "name": "calf raises",
+        "sets": 4,
+        "reps": "10-12",
+        "weight": "70",
+        "notes": "felt good"
+      }
+    ]
+  }
+]
