@@ -26,25 +26,57 @@
       <a href="{{ url_for('index') }}" class="btn btn-link">← Back to Log</a>
     </div>
 
-    {% for workout in workouts|sort(attribute='date', reverse=True) %}
-      <div class="card mb-4">
-        <div class="card-header bg-primary text-white">
-          <strong>{{ workout.workout_name }}</strong> <span class="float-end">{{ workout.date }}</span>
+    <div class="mb-3">
+      <label class="form-label">Filter by Workout Type:</label>
+      <select id="filter-type" class="form-select">
+        <option value="All">All</option>
+        <option value="Push">Push</option>
+        <option value="Pull">Pull</option>
+        <option value="Legs">Legs</option>
+        <option value="Upper">Upper</option>
+        <option value="Lower">Lower</option>
+        <option value="Full Body">Full Body</option>
+      </select>
+    </div>
+
+    <div id="history-container">
+      {% for workout in workouts|sort(attribute='date', reverse=True) %}
+        <div class="workout-card card mb-4" data-type="{{ workout.workout_name }}">
+          <div class="card-header bg-primary text-white">
+            <strong>{{ workout.workout_name }}</strong>
+            <span class="float-end">{{ workout.date }}</span>
+          </div>
+          <div class="card-body">
+            <ul class="list-unstyled">
+              {% for ex in workout.exercises %}
+                <li class="exercise-line">
+                  – <strong>{{ ex.name }}</strong>
+                  {{ ex.sets }}x{{ ex.reps }}
+                  {% if ex.weight %}@ {{ ex.weight }}{% endif %}
+                  {% if ex.notes %} (<em>{{ ex.notes }}</em>){% endif %}
+                </li>
+              {% endfor %}
+            </ul>
+          </div>
         </div>
-        <div class="card-body">
-          <ul class="list-unstyled">
-            {% for ex in workout.exercises %}
-              <li class="exercise-line">
-                – <strong>{{ ex.name }}</strong>
-                {{ ex.sets }}x{{ ex.reps }}
-                {% if ex.weight %}@ {{ ex.weight }}{% endif %}
-                {% if ex.notes %} (<em>{{ ex.notes }}</em>){% endif %}
-              </li>
-            {% endfor %}
-          </ul>
-        </div>
-      </div>
-    {% endfor %}
+      {% endfor %}
+    </div>
   </div>
+
+  <script>
+    document.getElementById("filter-type").addEventListener("change", function () {
+      const selected = this.value;
+      const cards = document.querySelectorAll(".workout-card");
+
+      cards.forEach(card => {
+        const type = card.getAttribute("data-type");
+        if (selected === "All" || type === selected) {
+          card.style.display = "block";
+        } else {
+          card.style.display = "none";
+        }
+      });
+    });
+  </script>
 </body>
 </html>
