@@ -1,143 +1,77 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Log Workout</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <style>
-    body {
-      background-color: #f8f9fa;
+<script>
+  let exerciseCount = 0;
+  const pastWorkouts = {{ past_workouts | tojson }};
+
+  function addExercise(name = "", sets = "", reps = "", weight = "", notes = "") {
+    const container = document.getElementById("exercises");
+
+    const div = document.createElement("div");
+    div.classList.add("exercise-line");
+    div.setAttribute("data-index", exerciseCount);
+
+    div.innerHTML = `
+      <button type="button" class="btn btn-sm btn-danger remove-btn" onclick="removeExercise(${exerciseCount})">🗑️</button>
+      <input type="text" name="exercise-${exerciseCount}-name" class="form-control" placeholder="Name" value="${name}" required style="min-width: 120px;">
+      <input type="number" name="exercise-${exerciseCount}-sets" class="form-control" placeholder="Sets" value="${sets}" required style="width: 80px;">
+      <span style="font-weight:bold;">x</span>
+      <input type="text" name="exercise-${exerciseCount}-reps" class="form-control" placeholder="Reps" value="${reps}" required style="width: 100px;">
+      <span style="font-weight:bold;">@</span>
+      <input type="text" name="exercise-${exerciseCount}-weight" class="form-control" placeholder="Weight (lbs)" value="${weight}" required style="width: 120px;">
+      <input type="text" name="exercise-${exerciseCount}-notes" class="form-control" placeholder="(notes)" value="${notes}" style="min-width: 150px;">
+    `;
+
+    container.appendChild(div);
+    exerciseCount++;
+    document.getElementById("exercise-count").value = exerciseCount;
+  }
+
+  function removeExercise(index) {
+    const container = document.getElementById("exercises");
+    const card = container.querySelector(`.exercise-line[data-index="${index}"]`);
+    if (card) {
+      container.removeChild(card);
     }
-    .container {
-      max-width: 800px;
+  }
+
+  function fillFromPrevious(select) {
+    const selectedIndex = select.value;
+    if (selectedIndex === "") return;
+
+    const workout = pastWorkouts[selectedIndex];
+    const exercises = workout.exercises;
+
+    // Clear existing
+    document.getElementById("exercises").innerHTML = "";
+    exerciseCount = 0;
+
+    // Set workout name dropdown
+    const workoutDropdown = document.querySelector('select[name="workout_name"]');
+    workoutDropdown.value = workout.workout_name;
+
+    // Add exercises
+    for (let ex of exercises) {
+      addExercise(ex.name, ex.sets, ex.reps, ex.weight, ex.notes);
     }
-    .exercise-line {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      align-items: center;
-      margin-bottom: 10px;
-      border: 1px solid #ddd;
-      padding: 10px;
-      border-radius: 6px;
-      background-color: #fff;
-      position: relative;
-    }
-    .exercise-line input {
-      flex-grow: 1;
-    }
-    .remove-btn {
-      position: absolute;
-      top: 5px;
-      right: 5px;
-    }
-  </style>
-</head>
-<body class="p-4">
-  <div class="container">
-    <div class="card p-4">
-      <h2 class="mb-4">📝 Log Workout</h2>
-      <form method="POST" id="workout-form">
-        <div class="mb-3">
-          <label class="form-label">Date:</label>
-          <input type="date" name="date" class="form-control" required>
-        </div>
+  }
 
-        <div class="mb-3">
-          <label class="form-label">Workout Type:</label>
-          <select name="workout_name" class="form-select" required>
-            <option value="">-- Select Workout --</option>
-            <option value="Push">Push</option>
-            <option value="Pull">Pull</option>
-            <option value="Legs">Legs</option>
-            <option value="Upper">Upper</option>
-            <option value="Lower">Lower</option>
-            <option value="Full Body">Full Body</option>
-          </select>
-        </div>
+  // Clear reuse dropdown if user manually picks a new workout type
+  document.addEventListener("DOMContentLoaded", function () {
+    const workoutSelect = document.querySelector('select[name="workout_name"]');
+    const reuseSelect = document.querySelector('select[onchange="fillFromPrevious(this)"]');
 
-        <div class="mb-3">
-          <label class="form-label">Reuse Previous Workout:</label>
-          <select class="form-select" onchange="fillFromPrevious(this)">
-            <option value="">-- Select Previous Workout --</option>
-            {% for workout in past_workouts|sort(attribute='date', reverse=True) %}
-              <option value="{{ loop.index0 }}">
-                {{ workout.workout_name }} ({{ workout.date }})
-              </option>
-            {% endfor %}
-          </select>
-        </div>
-
-        <div id="exercises"></div>
-        <input type="hidden" id="exercise-count" name="exercise-count" value="0">
-
-        <button type="button" class="btn btn-outline-secondary mb-3" onclick="addExercise()">+ Add Exercise</button>
-        <br>
-        <button type="submit" class="btn btn-primary">💾 Save Workout</button>
-      </form>
-      <hr>
-      <a href="{{ url_for('history') }}" class="btn btn-link">📚 View History</a>
-    </div>
-  </div>
-
-  <script>
-    let exerciseCount = 0;
-    const pastWorkouts = {{ past_workouts | tojson }};
-
-    function addExercise(name = "", sets = "", reps = "", weight = "", notes = "") {
-      const container = document.getElementById("exercises");
-
-      const div = document.createElement("div");
-      div.classList.add("exercise-line");
-      div.setAttribute("data-index", exerciseCount);
-
-      div.innerHTML = `
-        <button type="button" class="btn btn-sm btn-danger remove-btn" onclick="removeExercise(${exerciseCount})">🗑️</button>
-        <input type="text" name="exercise-${exerciseCount}-name" class="form-control" placeholder="Name" value="${name}" required style="min-width: 120px;">
-        <input type="number" name="exercise-${exerciseCount}-sets" class="form-control" placeholder="Sets" value="${sets}" required style="width: 80px;">
-        <span style="font-weight:bold;">x</span>
-        <input type="text" name="exercise-${exerciseCount}-reps" class="form-control" placeholder="Reps" value="${reps}" required style="width: 100px;">
-        <span style="font-weight:bold;">@</span>
-        <input type="text" name="exercise-${exerciseCount}-weight" class="form-control" placeholder="Weight (lbs)" value="${weight}" required style="width: 120px;">
-        <input type="text" name="exercise-${exerciseCount}-notes" class="form-control" placeholder="(notes)" value="${notes}" style="min-width: 150px;">
-      `;
-
-      container.appendChild(div);
-      exerciseCount++;
-      document.getElementById("exercise-count").value = exerciseCount;
-    }
-
-    function removeExercise(index) {
-      const container = document.getElementById("exercises");
-      const card = container.querySelector(`.exercise-line[data-index="${index}"]`);
-      if (card) {
-        container.removeChild(card);
+    workoutSelect.addEventListener("change", () => {
+      if (reuseSelect.value !== "") {
+        reuseSelect.value = "";
+        document.getElementById("exercises").innerHTML = "";
+        exerciseCount = 0;
+        for (let i = 0; i < 4; i++) {
+          addExercise();
+        }
       }
+    });
+
+    for (let i = 0; i < 4; i++) {
+      addExercise();
     }
-
-    function fillFromPrevious(select) {
-      const selectedIndex = select.value;
-      if (selectedIndex === "") return;
-
-      const workout = pastWorkouts[selectedIndex];
-      const exercises = workout.exercises;
-
-      // Clear existing
-      document.getElementById("exercises").innerHTML = "";
-      exerciseCount = 0;
-
-      // Add exercises
-      for (let ex of exercises) {
-        addExercise(ex.name, ex.sets, ex.reps, ex.weight, ex.notes);
-      }
-    }
-
-    // Add 4 empty exercises on first load
-    window.onload = () => {
-      for (let i = 0; i < 4; i++) {
-        addExercise();
-      }
-    }
-  </script>
-</body>
-</html>
+  });
+</script>
