@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Fitness Tracker App</title>
+  <title>Log Workout</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
     body {
@@ -30,36 +30,29 @@
       background-color: #92c58c;
       border-color: #92c58c;
     }
-    .form-section {
-      background-color: white;
-      border: 1px solid #dee2e6;
-      padding: 15px;
-      border-radius: 6px;
-      margin-bottom: 10px;
-    }
-    .remove-btn {
-      position: absolute;
-      top: 5px;
-      right: 10px;
-    }
     .exercise-line {
       display: flex;
       flex-wrap: wrap;
       gap: 10px;
       align-items: center;
       margin-bottom: 10px;
-      border: 1px solid #dee2e6;
+      border: 1px solid #ccc;
       padding: 10px;
       border-radius: 6px;
-      background-color: #ffffff;
+      background-color: #fff;
       position: relative;
+    }
+    .remove-btn {
+      position: absolute;
+      top: 5px;
+      right: 5px;
     }
   </style>
 </head>
 <body class="p-4">
   <div class="container">
-    <div class="card p-4 mb-4">
-      <h2 class="mb-3 text-center">🌿 Fitness Tracker</h2>
+    <div class="card p-4">
+      <h2 class="mb-4">📝 Log Workout</h2>
       <form method="POST" id="workout-form">
         <div class="mb-3">
           <label class="form-label">Date:</label>
@@ -79,18 +72,32 @@
           </select>
         </div>
 
+        <div class="mb-3">
+          <label class="form-label">Reuse Previous Workout:</label>
+          <select class="form-select" id="reuse_select">
+            <option value="">-- Select Previous Workout --</option>
+            {% for workout in past_workouts|sort(attribute='date', reverse=True) %}
+              <option value="{{ loop.index0 }}">
+                {{ workout.workout_name }} ({{ workout.date }})
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+
         <div id="exercises"></div>
         <input type="hidden" id="exercise-count" name="exercise-count" value="0">
-
         <button type="button" class="btn btn-outline-secondary mb-3" onclick="addExercise()">+ Add Exercise</button>
         <br>
         <button type="submit" class="btn btn-primary">💾 Save Workout</button>
       </form>
+      <hr>
+      <a href="{{ url_for('history') }}" class="btn btn-link">📚 View History</a>
     </div>
   </div>
 
   <script>
     let exerciseCount = 0;
+    const pastWorkouts = {{ past_workouts | tojson | safe }};
 
     function addExercise(name = "", sets = "", reps = "", weight = "", notes = "") {
       const container = document.getElementById("exercises");
@@ -123,9 +130,46 @@
       }
     }
 
-    // Load 4 default blanks
-    document.addEventListener("DOMContentLoaded", () => {
-      for (let i = 0; i < 4; i++) addExercise();
+    function fillFromPrevious(index) {
+      if (index === "") return;
+      const workout = pastWorkouts[index];
+      const exercises = workout.exercises;
+
+      // Clear existing
+      document.getElementById("exercises").innerHTML = "";
+      exerciseCount = 0;
+
+      // Set workout type
+      document.getElementById("workout_name").value = workout.workout_name;
+
+      // Add exercises
+      for (let ex of exercises) {
+        addExercise(ex.name, ex.sets, ex.reps, ex.weight, ex.notes);
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+      const workoutSelect = document.getElementById("workout_name");
+      const reuseSelect = document.getElementById("reuse_select");
+
+      reuseSelect.addEventListener("change", function () {
+        fillFromPrevious(this.value);
+      });
+
+      workoutSelect.addEventListener("change", function () {
+        if (reuseSelect.value !== "") {
+          reuseSelect.value = "";
+          document.getElementById("exercises").innerHTML = "";
+          exerciseCount = 0;
+          for (let i = 0; i < 4; i++) {
+            addExercise();
+          }
+        }
+      });
+
+      for (let i = 0; i < 4; i++) {
+        addExercise();
+      }
     });
   </script>
 </body>
