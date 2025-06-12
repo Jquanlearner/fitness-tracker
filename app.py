@@ -18,6 +18,8 @@ def save_data(data):
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
+    data = load_data()
+
     if request.method == 'POST':
         date = request.form['date']
         workout_name = request.form['workout_name']
@@ -25,20 +27,20 @@ def index():
         count = int(request.form['exercise-count'])
 
         for i in range(count):
-            name = request.form[f'exercise-{i}-name']
-            sets = int(request.form[f'exercise-{i}-sets'])
-            reps = request.form[f'exercise-{i}-reps']
-            weight = request.form[f'exercise-{i}-weight']
-            notes = request.form[f'exercise-{i}-notes']
-            exercises.append({
-                'name': name,
-                'sets': sets,
-                'reps': reps,
-                'weight': weight,
-                'notes': notes
-            })
+            name = request.form.get(f'exercise-{i}-name', '').strip()
+            sets = request.form.get(f'exercise-{i}-sets', '').strip()
+            reps = request.form.get(f'exercise-{i}-reps', '').strip()
+            weight = request.form.get(f'exercise-{i}-weight', '').strip()
+            notes = request.form.get(f'exercise-{i}-notes', '').strip()
+            if name:
+                exercises.append({
+                    'name': name,
+                    'sets': sets,
+                    'reps': reps,
+                    'weight': weight,
+                    'notes': notes
+                })
 
-        data = load_data()
         data.append({
             'date': date,
             'workout_name': workout_name,
@@ -47,7 +49,7 @@ def index():
         save_data(data)
         return redirect(url_for('index'))
 
-    return render_template('index.html')
+    return render_template('index.html', past_workouts=data)
 
 @app.route('/history')
 def history():

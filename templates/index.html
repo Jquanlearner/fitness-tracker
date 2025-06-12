@@ -11,18 +11,25 @@
     .container {
       max-width: 800px;
     }
-    .exercise-card {
-      position: relative;
+    .exercise-line {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 10px;
       border: 1px solid #ddd;
-      border-radius: 8px;
-      padding: 15px;
-      background: #fff;
-      margin-bottom: 15px;
+      padding: 10px;
+      border-radius: 6px;
+      background-color: #fff;
+      position: relative;
+    }
+    .exercise-line input {
+      flex-grow: 1;
     }
     .remove-btn {
       position: absolute;
-      top: 10px;
-      right: 10px;
+      top: 5px;
+      right: 5px;
     }
   </style>
 </head>
@@ -35,6 +42,7 @@
           <label class="form-label">Date:</label>
           <input type="date" name="date" class="form-control" required>
         </div>
+
         <div class="mb-3">
           <label class="form-label">Workout Type:</label>
           <select name="workout_name" class="form-select" required>
@@ -45,6 +53,18 @@
             <option value="Upper">Upper</option>
             <option value="Lower">Lower</option>
             <option value="Full Body">Full Body</option>
+          </select>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Reuse Previous Workout:</label>
+          <select class="form-select" onchange="fillFromPrevious(this)">
+            <option value="">-- Select Previous Workout --</option>
+            {% for workout in past_workouts|sort(attribute='date', reverse=True) %}
+              <option value="{{ loop.index0 }}">
+                {{ workout.workout_name }} ({{ workout.date }})
+              </option>
+            {% endfor %}
           </select>
         </div>
 
@@ -62,27 +82,24 @@
 
   <script>
     let exerciseCount = 0;
+    const pastWorkouts = {{ past_workouts | tojson }};
 
     function addExercise(name = "", sets = "", reps = "", weight = "", notes = "") {
       const container = document.getElementById("exercises");
 
       const div = document.createElement("div");
-      div.classList.add("exercise-card");
+      div.classList.add("exercise-line");
       div.setAttribute("data-index", exerciseCount);
 
       div.innerHTML = `
         <button type="button" class="btn btn-sm btn-danger remove-btn" onclick="removeExercise(${exerciseCount})">🗑️</button>
-        <h5>Exercise ${exerciseCount + 1}</h5>
-        <label class="form-label">Name:</label>
-        <input type="text" name="exercise-${exerciseCount}-name" class="form-control" required value="${name}">
-        <label class="form-label mt-2">Sets:</label>
-        <input type="number" name="exercise-${exerciseCount}-sets" class="form-control" required value="${sets}">
-        <label class="form-label mt-2">Reps (e.g. 10-12):</label>
-        <input type="text" name="exercise-${exerciseCount}-reps" class="form-control" required value="${reps}">
-        <label class="form-label mt-2">Weight (lbs):</label>
-        <input type="text" name="exercise-${exerciseCount}-weight" class="form-control" required value="${weight}">
-        <label class="form-label mt-2">Notes:</label>
-        <input type="text" name="exercise-${exerciseCount}-notes" class="form-control" value="${notes}">
+        <input type="text" name="exercise-${exerciseCount}-name" class="form-control" placeholder="Name" value="${name}" required style="min-width: 120px;">
+        <input type="number" name="exercise-${exerciseCount}-sets" class="form-control" placeholder="Sets" value="${sets}" required style="width: 80px;">
+        <span style="font-weight:bold;">x</span>
+        <input type="text" name="exercise-${exerciseCount}-reps" class="form-control" placeholder="Reps" value="${reps}" required style="width: 100px;">
+        <span style="font-weight:bold;">@</span>
+        <input type="text" name="exercise-${exerciseCount}-weight" class="form-control" placeholder="Weight (lbs)" value="${weight}" required style="width: 120px;">
+        <input type="text" name="exercise-${exerciseCount}-notes" class="form-control" placeholder="(notes)" value="${notes}" style="min-width: 150px;">
       `;
 
       container.appendChild(div);
@@ -92,15 +109,34 @@
 
     function removeExercise(index) {
       const container = document.getElementById("exercises");
-      const card = container.querySelector(`.exercise-card[data-index="${index}"]`);
+      const card = container.querySelector(`.exercise-line[data-index="${index}"]`);
       if (card) {
         container.removeChild(card);
       }
     }
 
-    // Start with 4 blank exercises
-    for (let i = 0; i < 4; i++) {
-      addExercise();
+    function fillFromPrevious(select) {
+      const selectedIndex = select.value;
+      if (selectedIndex === "") return;
+
+      const workout = pastWorkouts[selectedIndex];
+      const exercises = workout.exercises;
+
+      // Clear existing
+      document.getElementById("exercises").innerHTML = "";
+      exerciseCount = 0;
+
+      // Add exercises
+      for (let ex of exercises) {
+        addExercise(ex.name, ex.sets, ex.reps, ex.weight, ex.notes);
+      }
+    }
+
+    // Add 4 empty exercises on first load
+    window.onload = () => {
+      for (let i = 0; i < 4; i++) {
+        addExercise();
+      }
     }
   </script>
 </body>
