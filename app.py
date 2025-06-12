@@ -19,7 +19,6 @@ def save_data(data):
 @app.route('/', methods=['GET', 'POST'])
 def index():
     data = load_data()
-
     if request.method == 'POST':
         date = request.form['date']
         workout_name = request.form['workout_name']
@@ -27,11 +26,11 @@ def index():
         count = int(request.form['exercise-count'])
 
         for i in range(count):
-            name = request.form.get(f'exercise-{i}-name', '').strip()
-            sets = request.form.get(f'exercise-{i}-sets', '').strip()
-            reps = request.form.get(f'exercise-{i}-reps', '').strip()
-            weight = request.form.get(f'exercise-{i}-weight', '').strip()
-            notes = request.form.get(f'exercise-{i}-notes', '').strip()
+            name = request.form.get(f'exercise-{i}-name', '')
+            sets = request.form.get(f'exercise-{i}-sets', '')
+            reps = request.form.get(f'exercise-{i}-reps', '')
+            weight = request.form.get(f'exercise-{i}-weight', '')
+            notes = request.form.get(f'exercise-{i}-notes', '')
             if name:
                 exercises.append({
                     'name': name,
@@ -50,6 +49,38 @@ def index():
         return redirect(url_for('index'))
 
     return render_template('index.html', past_workouts=data)
+
+@app.route('/edit/<int:index>', methods=['GET', 'POST'])
+def edit(index):
+    data = load_data()
+    if index >= len(data):
+        return redirect(url_for('history'))
+
+    if request.method == 'POST':
+        data[index]['date'] = request.form['date']
+        data[index]['workout_name'] = request.form['workout_name']
+        exercises = []
+        count = int(request.form['exercise-count'])
+
+        for i in range(count):
+            name = request.form.get(f'exercise-{i}-name', '')
+            sets = request.form.get(f'exercise-{i}-sets', '')
+            reps = request.form.get(f'exercise-{i}-reps', '')
+            weight = request.form.get(f'exercise-{i}-weight', '')
+            notes = request.form.get(f'exercise-{i}-notes', '')
+            if name:
+                exercises.append({
+                    'name': name,
+                    'sets': sets,
+                    'reps': reps,
+                    'weight': weight,
+                    'notes': notes
+                })
+        data[index]['exercises'] = exercises
+        save_data(data)
+        return redirect(url_for('history'))
+
+    return render_template('edit.html', workout=data[index], index=index)
 
 @app.route('/history')
 def history():
